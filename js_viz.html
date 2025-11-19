@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #container { width: 100%; height: 600px; }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+    const container = document.getElementById('container');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(55, container.clientWidth / container.clientHeight, 0.1, 2000);
+
+    const renderer = new THREE.WebGLRenderer({antialias: true});
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    // Add a 3D echo volume
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute($JS_COORDS$, 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute($JS_VALS$, 3));
+    const material = new THREE.PointsMaterial({size: 3, vertexColors: true});
+    const echo_volume = new THREE.Points(geometry, material);
+    scene.add(echo_volume);
+
+    const normalVector = new THREE.Vector3($NORMAL_VECTOR$);
+    const pointOnPlane = new THREE.Vector3($POINT_ON_PLANE$);
+    
+    // make interactive
+    geometry.computeBoundingBox();
+    const boundingBox = geometry.boundingBox;
+    const center = boundingBox.getCenter(new THREE.Vector3(0,0,0));
+    geometry.translate(-center.x, -center.y, -center.z);
+    
+    // Calculate plane extent based on nearby points
+    const normalizedNormal = normalVector.clone().normalize();
+    const shiftedPoint = pointOnPlane.clone().sub(center);
+    
+    // Find points near the plane
+    const positions = geometry.attributes.position.array;
+    const threshold = 5.0; // Distance threshold to consider point "on" the plane
+    const pointsOnPlane = [];
+    
+    for(let i = 0; i < positions.length; i += 3) {
+        const point = new THREE.Vector3(positions[i], positions[i+1], positions[i+2]);
+        const distToPlane = Math.abs(normalizedNormal.dot(point.clone().sub(shiftedPoint)));
+        if(distToPlane < threshold) {
+            pointsOnPlane.push(point);
+        }
+    }
+    
+    // Project points onto plane coordinate system to find extent
+    const referenceNormal = new THREE.Vector3(0, 0, 1);
+    const planeQuaternion = new THREE.Quaternion().setFromUnitVectors(referenceNormal, normalizedNormal);
+    const inverseQuaternion = planeQuaternion.clone().invert();
+    
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    pointsOnPlane.forEach(point => {
+        const localPoint = point.clone().sub(shiftedPoint).applyQuaternion(inverseQuaternion);
+        minX = Math.min(minX, localPoint.x);
+        maxX = Math.max(maxX, localPoint.x);
+        minY = Math.min(minY, localPoint.y);
+        maxY = Math.max(maxY, localPoint.y);
+    });
+    
+    // Create plane with calculated dimensions
+    const planeWidth = Math.max(10, maxX - minX);
+    const planeHeight = Math.max(10, maxY - minY);
+    const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight, 20, 20);
+    const planeMaterial = new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.25
+    });
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    
+    // Center the plane on the point distribution
+    const offsetX = (minX + maxX) / 2;
+    const offsetY = (minY + maxY) / 2;
+    const localOffset = new THREE.Vector3(offsetX, offsetY, 0).applyQuaternion(planeQuaternion);
+    
+    plane.quaternion.copy(planeQuaternion);
+    plane.position.copy(shiftedPoint.add(localOffset));
+    
+    scene.add(plane);
+
+    const size = boundingBox.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const fov = camera.fov * (Math.PI / 180);
+    const cameraZ = Math.abs((maxDim / 2) / Math.tan(fov / 2));
+    camera.position.set(0, 0, cameraZ * 1.5);
+    camera.near = Math.max(0.1, cameraZ / 100);
+    camera.far = cameraZ * 10;
+    camera.updateProjectionMatrix();
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.1;
+    controls.rotateSpeed = 0.5;
+    controls.zoomSpeed = 1.0;
+    controls.minDistance = cameraZ * 0.2;
+    controls.maxDistance = cameraZ * 5;
+
+    // Restore camera state from localStorage
+    const savedState = localStorage.getItem('echoSlicerCameraState');
+    if (savedState) {
+        const state = JSON.parse(savedState);
+        camera.position.set(state.camera.x, state.camera.y, state.camera.z);
+        controls.target.set(state.target.x, state.target.y, state.target.z);
+        controls.update();
+    }
+
+    // Save camera state on change
+    let saveTimeout;
+    controls.addEventListener('change', () => {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            const state = {
+                camera: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+                target: { x: controls.target.x, y: controls.target.y, z: controls.target.z }
+            };
+            localStorage.setItem('echoSlicerCameraState', JSON.stringify(state));
+        }, 100);
+    });
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+    });
+
+    animate();
+    </script>
+</body>
+</html>
