@@ -61,4 +61,9 @@ The output contains:
 ## Dataset
 We also release an open-source dataset of 29 three-dimensional echocardiogram videos. The data was collected by the authors themselves, who visited the echocardiography lab and recorded their own heart images. The dataset includes 15 volumes from Person A, 5 from Person B, 5 from Person C, and 4 from Person D. We hope this resource will encourage further research on AI in echocardiography.
 
+The dataset can be downloaded from the github release
+```bash
+wget https://github.com/echonet/3d-echo/releases/download/v1.0/dataset.zip
+```
+
 
