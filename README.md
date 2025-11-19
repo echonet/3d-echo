@@ -49,7 +49,7 @@ To visualize the output in the interactive streamlit app
 ```bash
    streamlit run app.py
 ```
-[A demo should be running, as shown in this video](https://www.youtube.com/watch?v=ssF3slzh_Eo)
+[A demo should be running, as shown in this video](https://www.youtube.com/watch?v=ssF3slzh_Eo) 
 
 ## Output
 
