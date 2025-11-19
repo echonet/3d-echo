@@ -13,7 +13,7 @@ EchoSlicer automatically extracts standard echocardiography views (A2C, A3C, A4C
 ### 1. Clone the repository
 ```bash
 git clone https://github.com/echonet/3d-echo
-cd EchoSlicer
+cd 3d-echo
 ```
 
 ### 2. Download pre-trained models
