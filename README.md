@@ -68,4 +68,19 @@ The dataset can be downloaded from the github release
 wget https://github.com/echonet/3d-echo/releases/download/v1.0/dataset.zip
 ```
 
+## Citation
+
+If you use this code or the dataset in your research, please cite the following paper:
+
+**Automated Interpretable 2D Video Extraction from 3D Echocardiography** Milos Vukadinovic, Hirotaka Ieki, Yuki Sahashi, David Ouyang, and Bryan He.  
+*arXiv preprint arXiv:2511.15946*, 2025.
+
+```bibtex
+@article{vukadinovic2025automated,
+  title={Automated Interpretable 2D Video Extraction from 3D Echocardiography},
+  author={Vukadinovic, Milos and Ieki, Hirotaka and Sahashi, Yuki and Ouyang, David and He, Bryan},
+  journal={arXiv preprint arXiv:2511.15946},
+  year={2025},
+  url={[https://arxiv.org/abs/2511.15946](https://arxiv.org/abs/2511.15946)}
+}
 
